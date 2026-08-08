@@ -1,0 +1,28 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Data
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated outputs
+results/
+datasets/raw/
+
+# OS
+.DS_Store
+Thumbs.db
