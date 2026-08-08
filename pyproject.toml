@@ -16,6 +16,9 @@ dev = [
 ]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: tests that communicate with external services",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
