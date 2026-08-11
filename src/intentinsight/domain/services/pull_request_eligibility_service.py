@@ -27,11 +27,6 @@ class PullRequestEligibilityService:
                 ExclusionReason.NOT_MERGED
             )
 
-        if pull_request.merge_commit_sha is None:
-            return PullRequestEligibility.excluded(
-                ExclusionReason.NO_MERGE_COMMIT
-            )
-
         if file_summary.total_files == 0:
             return PullRequestEligibility.excluded(
                 ExclusionReason.NO_CHANGED_FILES

@@ -6,6 +6,9 @@ from intentinsight.application.services.pull_request_file_miner import (
     PullRequestFileMiner,
 )
 from intentinsight.domain.models.pull_request import PullRequest
+from intentinsight.domain.models.pull_request_file_summary import (
+    PullRequestFileSummary,
+)
 from intentinsight.domain.models.research_record import ResearchRecord
 from intentinsight.domain.services.pull_request_eligibility_service import (
     PullRequestEligibilityService,
@@ -29,13 +32,22 @@ class ResearchDatasetBuilder:
     ) -> ResearchRecord:
         """Build one research record from a pull request."""
 
-        owner, repository = pull_request.repository.split("/", maxsplit=1)
-
-        file_summary = self._file_miner.mine_pull_request_files(
-            owner=owner,
-            repository=repository,
-            pull_request_number=pull_request.number,
+        owner, repository = pull_request.repository.split(
+            "/",
+            maxsplit=1,
         )
+
+        file_summary = self._empty_file_summary()
+
+        # A merged_at timestamp is sufficient to establish that the
+        # pull request was merged. GitHub does not always provide
+        # merge_commit_sha for historical pull requests.
+        if pull_request.is_merged:
+            file_summary = self._file_miner.mine_pull_request_files(
+                owner=owner,
+                repository=repository,
+                pull_request_number=pull_request.number,
+            )
 
         eligibility = self._eligibility_service.evaluate(
             pull_request=pull_request,
@@ -65,4 +77,16 @@ class ResearchDatasetBuilder:
             commits_count=pull_request.commits_count,
             eligible=eligibility.is_eligible,
             exclusion_reason=eligibility.reason,
+        )
+
+    @staticmethod
+    def _empty_file_summary() -> PullRequestFileSummary:
+        """Create an empty file summary."""
+        return PullRequestFileSummary(
+            files=(),
+            source_files=(),
+            test_files=(),
+            documentation_files=(),
+            configuration_files=(),
+            other_files=(),
         )

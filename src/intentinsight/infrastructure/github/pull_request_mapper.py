@@ -12,7 +12,11 @@ def map_pull_request(
         data: dict,
 ) -> PullRequest:
     """Convert a GitHub pull request response into a domain model."""
+
     user = data.get("user") or {}
+
+    base = data.get("base") or {}
+    head = data.get("head") or {}
 
     created_at = _parse_required_datetime(data.get("created_at"))
     updated_at = _parse_required_datetime(data.get("updated_at"))
@@ -29,6 +33,11 @@ def map_pull_request(
         updated_at=updated_at,
         merged_at=merged_at,
         merge_commit_sha=data.get("merge_commit_sha"),
+
+        # Exact historical anchors supplied by GitHub.
+        base_sha=base.get("sha"),
+        head_sha=head.get("sha"),
+
         commits_count=int(data.get("commits", 0)),
         changed_files_count=int(data.get("changed_files", 0)),
         additions=int(data.get("additions", 0)),
@@ -38,17 +47,25 @@ def map_pull_request(
 
 def _parse_required_datetime(value: str | None) -> datetime:
     """Parse a required GitHub ISO-8601 timestamp."""
+
     if not value:
         raise ValueError(
             "Expected a required GitHub timestamp but received no value."
         )
 
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(
+        value.replace("Z", "+00:00")
+    )
 
 
-def _parse_optional_datetime(value: str | None) -> datetime | None:
+def _parse_optional_datetime(
+        value: str | None,
+) -> datetime | None:
     """Parse an optional GitHub ISO-8601 timestamp."""
+
     if not value:
         return None
 
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return datetime.fromisoformat(
+        value.replace("Z", "+00:00")
+    )

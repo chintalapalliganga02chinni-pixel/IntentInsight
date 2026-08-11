@@ -12,6 +12,11 @@ from intentinsight.infrastructure.github.exceptions import (
     GitHubAuthenticationError,
     GitHubRateLimitError,
 )
+from intentinsight.infrastructure.github.git_comparison import (
+    GitComparison,
+    GitComparisonFile,
+)
+from intentinsight.infrastructure.github.git_tree import GitTreeEntry
 from intentinsight.infrastructure.github.models import (
     PullRequestFile,
     RepositoryInfo,
@@ -66,7 +71,14 @@ class GitHubClient:
 
         self._raise_for_api_error(response)
 
-        return response.json()
+        data = response.json()
+
+        if not isinstance(data, dict):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected user response."
+            )
+
+        return data
 
     def get_repository(
             self,
@@ -134,6 +146,34 @@ class GitHubClient:
 
         return data
 
+    def get_pull_request(
+            self,
+            owner: str,
+            repository: str,
+            pull_request_number: int,
+    ) -> dict[str, Any]:
+        """Retrieve detailed information about one pull request."""
+        if pull_request_number < 1:
+            raise ValueError(
+                "pull_request_number must be greater than or equal to 1."
+            )
+
+        response = self._client.get(
+            f"/repos/{owner}/{repository}/pulls/"
+            f"{pull_request_number}",
+        )
+
+        self._raise_for_api_error(response)
+
+        data = response.json()
+
+        if not isinstance(data, dict):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected pull request response."
+            )
+
+        return data
+
     def list_pull_request_files(
             self,
             owner: str,
@@ -190,8 +230,182 @@ class GitHubClient:
             for item in data
         ]
 
+    def get_commit_tree(
+            self,
+            owner: str,
+            repository: str,
+            commit_sha: str,
+            *,
+            recursive: bool = True,
+    ) -> list[GitTreeEntry]:
+        """Retrieve the Git tree associated with a commit."""
+
+        if not commit_sha:
+            raise ValueError("commit_sha must not be empty.")
+
+        params: dict[str, str] = {}
+
+        if recursive:
+            params["recursive"] = "1"
+
+        response = self._client.get(
+            f"/repos/{owner}/{repository}/git/trees/{commit_sha}",
+            params=params,
+        )
+
+        self._raise_for_api_error(response)
+
+        data = response.json()
+
+        if not isinstance(data, dict):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected Git tree response."
+            )
+
+        tree = data.get("tree")
+
+        if not isinstance(tree, list):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected Git tree payload."
+            )
+
+        entries: list[GitTreeEntry] = []
+
+        for item in tree:
+            if not isinstance(item, dict):
+                continue
+
+            path = item.get("path")
+            mode = item.get("mode")
+            entry_type = item.get("type")
+            sha = item.get("sha")
+
+            if not all(
+                    isinstance(value, str)
+                    for value in (
+                            path,
+                            mode,
+                            entry_type,
+                            sha,
+                    )
+            ):
+                continue
+
+            size = item.get("size")
+
+            entries.append(
+                GitTreeEntry(
+                    path=path,
+                    mode=mode,
+                    entry_type=entry_type,
+                    sha=sha,
+                    size=int(size) if size is not None else None,
+                )
+            )
+
+        return entries
+
+    def compare_commits(
+            self,
+            owner: str,
+            repository: str,
+            base_sha: str,
+            head_sha: str,
+    ) -> GitComparison:
+        """Compare two Git references using GitHub's comparison API."""
+
+        if not base_sha:
+            raise ValueError("base_sha must not be empty.")
+
+        if not head_sha:
+            raise ValueError("head_sha must not be empty.")
+
+        response = self._client.get(
+            f"/repos/{owner}/{repository}/compare/"
+            f"{base_sha}...{head_sha}",
+        )
+
+        self._raise_for_api_error(response)
+
+        data = response.json()
+
+        if not isinstance(data, dict):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected comparison response."
+            )
+
+        merge_base_commit = data.get("merge_base_commit") or {}
+
+        if not isinstance(merge_base_commit, dict):
+            merge_base_commit = {}
+
+        merge_base_sha = merge_base_commit.get("sha")
+
+        raw_files = data.get("files") or []
+
+        if not isinstance(raw_files, list):
+            raise GitHubAPIError(
+                "GitHub API returned an unexpected comparison files "
+                "response."
+            )
+
+        files: list[GitComparisonFile] = []
+
+        for item in raw_files:
+            if not isinstance(item, dict):
+                continue
+
+            filename = item.get("filename")
+            status = item.get("status")
+            sha = item.get("sha")
+
+            if not isinstance(filename, str):
+                continue
+
+            if not isinstance(status, str):
+                continue
+
+            if not isinstance(sha, str):
+                continue
+
+            previous_filename = item.get("previous_filename")
+
+            if previous_filename is not None and not isinstance(
+                    previous_filename,
+                    str,
+            ):
+                previous_filename = None
+
+            files.append(
+                GitComparisonFile(
+                    filename=filename,
+                    status=status,
+                    additions=int(item.get("additions", 0)),
+                    deletions=int(item.get("deletions", 0)),
+                    changes=int(item.get("changes", 0)),
+                    sha=sha,
+                    previous_filename=previous_filename,
+                )
+            )
+
+        return GitComparison(
+            base_sha=base_sha,
+            head_sha=head_sha,
+            merge_base_sha=(
+                str(merge_base_sha)
+                if merge_base_sha
+                else None
+            ),
+            status=str(data.get("status") or "unknown"),
+            ahead_by=int(data.get("ahead_by", 0)),
+            behind_by=int(data.get("behind_by", 0)),
+            files=tuple(files),
+        )
+
     @staticmethod
-    def _raise_for_api_error(response: httpx.Response) -> None:
+    def _raise_for_api_error(
+            response: httpx.Response,
+    ) -> None:
         """Translate HTTP failures into application-specific exceptions."""
         if response.status_code == 401:
             raise GitHubAuthenticationError(

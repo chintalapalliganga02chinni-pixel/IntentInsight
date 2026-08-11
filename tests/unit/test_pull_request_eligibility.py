@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from intentinsight.domain.models.pull_request import PullRequest
 from intentinsight.domain.models.pull_request_eligibility import (
-    EligibilityStatus,
     ExclusionReason,
 )
 from intentinsight.domain.models.pull_request_file_summary import (
@@ -23,7 +22,7 @@ def _pull_request(
         merged: bool = True,
         merge_commit_sha: str | None = "abc123",
 ) -> PullRequest:
-    """Create a minimal pull request for testing."""
+    """Create a representative pull request."""
     return PullRequest(
         repository="example/repository",
         number=42,
@@ -54,30 +53,30 @@ def _pull_request(
             else None
         ),
         merge_commit_sha=merge_commit_sha,
-        commits_count=1,
-        changed_files_count=1,
-        additions=10,
-        deletions=2,
+        commits_count=3,
+        changed_files_count=2,
+        additions=25,
+        deletions=8,
     )
 
 
 def _source_file() -> PullRequestFile:
-    """Create a source-code file for testing."""
+    """Create a representative source file."""
     return PullRequestFile(
         filename="src/application.py",
         status="modified",
-        additions=10,
-        deletions=2,
-        changes=12,
-        sha="abc123",
+        additions=20,
+        deletions=5,
+        changes=25,
+        sha="file123",
     )
 
 
-def test_merged_source_changing_pr_is_eligible() -> None:
-    """A merged PR with source changes should be eligible."""
+def _source_file_summary() -> PullRequestFileSummary:
+    """Create a summary containing one source-code file."""
     source_file = _source_file()
 
-    summary = PullRequestFileSummary(
+    return PullRequestFileSummary(
         files=(source_file,),
         source_files=(source_file,),
         test_files=(),
@@ -86,92 +85,19 @@ def test_merged_source_changing_pr_is_eligible() -> None:
         other_files=(),
     )
 
-    result = PullRequestEligibilityService().evaluate(
-        _pull_request(),
-        summary,
-    )
 
-    assert result.status == EligibilityStatus.ELIGIBLE
-    assert result.is_eligible is True
-    assert result.reason is None
-
-
-def test_unmerged_pr_is_excluded() -> None:
-    """Unmerged pull requests should be excluded."""
-    source_file = _source_file()
-
-    summary = PullRequestFileSummary(
-        files=(source_file,),
-        source_files=(source_file,),
-        test_files=(),
-        documentation_files=(),
-        configuration_files=(),
-        other_files=(),
-    )
-
-    result = PullRequestEligibilityService().evaluate(
-        _pull_request(merged=False),
-        summary,
-    )
-
-    assert result.status == EligibilityStatus.EXCLUDED
-    assert result.reason == ExclusionReason.NOT_MERGED.value
-
-
-def test_pr_without_merge_commit_is_excluded() -> None:
-    """A missing merge commit should exclude the PR."""
-    source_file = _source_file()
-
-    summary = PullRequestFileSummary(
-        files=(source_file,),
-        source_files=(source_file,),
-        test_files=(),
-        documentation_files=(),
-        configuration_files=(),
-        other_files=(),
-    )
-
-    result = PullRequestEligibilityService().evaluate(
-        _pull_request(merge_commit_sha=None),
-        summary,
-    )
-
-    assert result.status == EligibilityStatus.EXCLUDED
-    assert result.reason == ExclusionReason.NO_MERGE_COMMIT.value
-
-
-def test_pr_without_changed_files_is_excluded() -> None:
-    """A PR with no changed files should be excluded."""
-    summary = PullRequestFileSummary(
-        files=(),
-        source_files=(),
-        test_files=(),
-        documentation_files=(),
-        configuration_files=(),
-        other_files=(),
-    )
-
-    result = PullRequestEligibilityService().evaluate(
-        _pull_request(),
-        summary,
-    )
-
-    assert result.status == EligibilityStatus.EXCLUDED
-    assert result.reason == ExclusionReason.NO_CHANGED_FILES.value
-
-
-def test_documentation_only_pr_is_excluded() -> None:
-    """A documentation-only PR should not enter the main dataset."""
+def _documentation_only_summary() -> PullRequestFileSummary:
+    """Create a summary containing only documentation."""
     documentation_file = PullRequestFile(
         filename="README.md",
         status="modified",
-        additions=10,
+        additions=5,
         deletions=2,
-        changes=12,
-        sha="abc123",
+        changes=7,
+        sha="docs123",
     )
 
-    summary = PullRequestFileSummary(
+    return PullRequestFileSummary(
         files=(documentation_file,),
         source_files=(),
         test_files=(),
@@ -180,12 +106,90 @@ def test_documentation_only_pr_is_excluded() -> None:
         other_files=(),
     )
 
-    result = PullRequestEligibilityService().evaluate(
-        _pull_request(),
-        summary,
+
+def _empty_file_summary() -> PullRequestFileSummary:
+    """Create an empty file summary."""
+    return PullRequestFileSummary(
+        files=(),
+        source_files=(),
+        test_files=(),
+        documentation_files=(),
+        configuration_files=(),
+        other_files=(),
     )
 
-    assert result.status == EligibilityStatus.EXCLUDED
-    assert result.reason == (
-        ExclusionReason.NO_SOURCE_CODE_CHANGES.value
+
+def test_merged_source_changing_pr_is_eligible() -> None:
+    """A merged PR changing source code should be eligible."""
+
+    service = PullRequestEligibilityService()
+
+    result = service.evaluate(
+        pull_request=_pull_request(),
+        file_summary=_source_file_summary(),
     )
+
+    assert result.is_eligible is True
+    assert result.reason is None
+
+
+def test_merged_pr_without_merge_commit_is_eligible() -> None:
+    """A merged PR remains eligible when merge SHA metadata is unavailable."""
+
+    service = PullRequestEligibilityService()
+
+    result = service.evaluate(
+        pull_request=_pull_request(
+            merged=True,
+            merge_commit_sha=None,
+        ),
+        file_summary=_source_file_summary(),
+    )
+
+    assert result.is_eligible is True
+    assert result.reason is None
+
+
+def test_unmerged_pr_is_excluded() -> None:
+    """An unmerged PR should be excluded."""
+
+    service = PullRequestEligibilityService()
+
+    result = service.evaluate(
+        pull_request=_pull_request(
+            merged=False,
+            merge_commit_sha=None,
+        ),
+        file_summary=_source_file_summary(),
+    )
+
+    assert result.is_eligible is False
+    assert result.reason == ExclusionReason.NOT_MERGED
+
+
+def test_pr_without_changed_files_is_excluded() -> None:
+    """A PR without changed files should be excluded."""
+
+    service = PullRequestEligibilityService()
+
+    result = service.evaluate(
+        pull_request=_pull_request(),
+        file_summary=_empty_file_summary(),
+    )
+
+    assert result.is_eligible is False
+    assert result.reason == ExclusionReason.NO_CHANGED_FILES
+
+
+def test_documentation_only_pr_is_excluded() -> None:
+    """A PR changing only documentation should be excluded."""
+
+    service = PullRequestEligibilityService()
+
+    result = service.evaluate(
+        pull_request=_pull_request(),
+        file_summary=_documentation_only_summary(),
+    )
+
+    assert result.is_eligible is False
+    assert result.reason == ExclusionReason.NO_SOURCE_CODE_CHANGES

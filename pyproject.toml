@@ -9,6 +9,7 @@ description = "An empirical software engineering tool for modeling intent-impact
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "python-dotenv>=1.0,<2.0",
+    "sentence-transformers>=5.0,<6.0",
 ]
 [project.optional-dependencies]
 dev = [

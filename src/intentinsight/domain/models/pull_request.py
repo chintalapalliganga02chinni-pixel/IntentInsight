@@ -25,6 +25,13 @@ class PullRequest:
     additions: int
     deletions: int
 
+    # Historical commit anchors.
+    #
+    # These are optional because older/test-created PullRequest objects
+    # may not have GitHub commit-anchor metadata.
+    base_sha: str | None = None
+    head_sha: str | None = None
+
     @property
     def is_merged(self) -> bool:
         """Return whether the pull request was merged."""
