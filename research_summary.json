@@ -1,0 +1,41 @@
+{
+  "schema_version": 2,
+  "study": {
+    "eligible_pull_requests": 703,
+    "downstream_observations": 702,
+    "right_censored_excluded": 1
+  },
+  "historical_comparison": {
+    "current_mean": 0.692793,
+    "current_median": 0.689021,
+    "historical_mean": 0.702574,
+    "historical_median": 0.717529,
+    "correlation": 0.944004,
+    "identical_profiles": 335,
+    "historical_higher": 228,
+    "historical_lower": 144,
+    "total_pull_requests": 703
+  },
+  "null_model": {
+    "permutations": 10000,
+    "observed_similarity": 0.307207,
+    "random_mean_similarity": 0.241821,
+    "random_std": 0.002504,
+    "percentile_2_5": 0.2369,
+    "percentile_97_5": 0.2468,
+    "observed_minus_random": 0.065386,
+    "standardized_effect": 26.1111,
+    "permutation_p_value": 0.0001
+  },
+  "predictive_evaluation": {
+    "roc_auc_difference": -0.003821,
+    "bootstrap_ci_lower": -0.024571,
+    "bootstrap_ci_upper": 0.018007,
+    "paired_permutation_p_value": 0.72962704
+  },
+  "historical_reconstruction": {
+    "eligible_pull_requests": 703,
+    "exact_module_profile_equivalence": 703,
+    "equivalence_rate": 1.0
+  }
+}

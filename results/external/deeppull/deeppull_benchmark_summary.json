@@ -1,0 +1,15 @@
+{
+  "dataset": "DeepPull Python",
+  "rows": 9773,
+  "created_at_min": "2010-08-31 20:42:47",
+  "created_at_max": "2022-07-24 13:19:03",
+  "closed_at_min": "2010-09-02 01:21:09",
+  "closed_at_max": "2022-07-25 02:19:10",
+  "decision_accept": 7061,
+  "decision_reject": 2712,
+  "reopening_reopened": 188,
+  "reopening_nonreopened": 9585,
+  "split": "chronological 60/20/20 by closed_at",
+  "random_seed": 42,
+  "results_file": "results\\external\\deeppull\\deeppull_benchmark_results.csv"
+}

@@ -1,245 +1,130 @@
-***# IntentInsight***
+# IntentInsight
 
+IntentInsight is an empirical software-engineering research project examining whether the structural impact implemented by a GitHub Pull Request aligns with the developer intent expressed in its title and description.
 
+Developer intent is represented with transformer-based sentence embeddings. Implemented impact is represented from changed Python modules and structural-change information. Their cosine relationship is expressed as Intent–Impact Divergence:
 
-***## Semantic–Structural Divergence in Pull Requests***
+```text
+divergence = 1 - cosine_similarity(intent, structural_impact)
+```
 
+## Research questions
 
+1. Can developer intent and implemented structural impact be represented consistently?
+2. Does Intent–Impact Divergence capture meaningful semantic–structural characteristics?
+3. Is the measure robust to historical reconstruction and structural-scope confounders?
+4. Does divergence add predictive value for subsequent structural rework?
 
-***IntentInsight is an empirical Software Engineering research project investigating whether the structural impact of a Pull Request is aligned with the intent expressed in its title and description.***
+## Study population
 
+The final analytical population contains 703 eligible Pull Requests from `pallets/flask`. All 703 have persisted semantic representations, structural representations, and divergence measurements.
 
+The downstream 90-day analysis contains 702 fully observable Pull Requests:
 
-***Developer intent is represented using transformer-based sentence embeddings. Implemented impact is represented using structural information extracted from changed Python modules. These representations are compared using an Intent–Impact Divergence measure.***
+- 531 with subsequent same-module structural rework;
+- 171 without observed same-module structural rework;
+- 1 right-censored observation excluded from the primary outcome analysis.
 
+Structural rework means that a subsequent merged Pull Request modifies at least one Python module affected by the original Pull Request within 90 days of its merge.
 
+## Main findings
 
-***## Research Questions***
+- Observed mean intent–structure similarity: `0.307207`
+- Random-pairing mean similarity: `0.241821`
+- Permutation value from 10,000 permutations: approximately `0.0001`
+- Historical Python module-profile equivalence: `703/703`
+- Baseline downstream ROC-AUC: `0.564427`
+- Baseline plus divergence ROC-AUC: `0.560606`
+- Incremental ROC-AUC: `-0.003821`
+- Bootstrap 95% confidence interval: `[-0.024571, +0.018007]`
+- Paired permutation value: `0.72962704`
 
+The study therefore finds non-random semantic–structural alignment, while detecting no incremental predictive benefit from divergence for the selected 90-day outcome.
 
+## Repository structure
 
-***1. Can developer intent and implemented structural impact be represented consistently?***
+```text
+src/intentinsight/   Authoritative Python package
+tests/               Unit and integration tests
+scripts/             Dataset, validation and experiment scripts
+results/             Generated research artifacts (not tracked by default)
+datasets/            External or generated datasets (not tracked by default)
+docs/                Supporting project documentation
+app.py               Streamlit launcher
+```
 
-***2. Does Intent–Impact Divergence capture meaningful semantic–structural characteristics of Pull Requests?***
+The authoritative dashboard implementation is under `src/intentinsight/presentation/dashboard/`.
 
-***3. Is the divergence measure robust to historical reconstruction and structural-scope confounders?***
+## Requirements
 
-***4. Does Intent–Impact Divergence provide incremental predictive value for subsequent structural rework?***
+- Python `>=3.12,<3.13`
+- A local copy of `intentinsight.db` for the read-only Research Workbench
+- A GitHub token only for collection or external integration operations
 
+## Installation
 
+Create and activate a virtual environment on Windows PowerShell:
 
-***## Dataset***
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev,research]"
+```
 
+Copy `.env.example` to `.env` only when environment configuration is required:
 
+```powershell
+Copy-Item .env.example .env
+```
 
-***The main analysis contains 703 eligible Pull Requests with 703 semantic representations, 703 structural representations, and 703 divergence measurements.***
+Never commit `.env` or a real access token.
 
+## Launch the Research Workbench
 
+Place `intentinsight.db` in the repository root, then run:
 
-***The downstream 90-day analysis contains 702 fully observable Pull Requests:***
+```powershell
+python -m streamlit run src/intentinsight/presentation/dashboard/app.py
+```
 
+The Workbench reads persisted database records and committed research artifacts. It does not rerun the empirical experiments during normal use.
 
+## Validation and tests
 
-***- 531 with subsequent same-module structural rework***
+Run the offline test suite:
 
-***- 171 without observed same-module structural rework***
+```powershell
+python -m pytest -q
+```
 
-***- 1 right-censored observation excluded from the primary outcome analysis***
+Final verified result on 16 August 2026:
 
+```text
+75 passed
+```
 
+Validate database completeness:
 
-***Structural rework is defined as a subsequent merged Pull Request, within 90 days of the original merge, modifying at least one Python module affected by the original Pull Request.***
+```powershell
+python check_database.py
+```
 
+Expected result:
 
+```text
+Missing research records: 0
+```
 
-***## Method***
+Integration tests that access GitHub may require `GITHUB_TOKEN` and network access.
 
+## Data and artifacts
 
+`.env`, local SQLite databases, generated results, and raw datasets are ignored by Git. The coursework submission bundle may include the validated database and selected result artifacts when permitted by the submission and data-availability requirements.
 
-***The pipeline represents:***
+The project analyses public repository data that can remain attributable to GitHub contributors. Reuse or redistribution should follow the relevant platform terms, research-ethics requirements, and institutional policy.
 
+## Project status
 
+The research implementation, empirical evaluation, Research Workbench, database completeness check, and 75-test offline suite are complete.
 
-***- developer intent using transformer-based sentence embeddings***
-
-***- implemented impact using Python module and structural-change information***
-
-***- semantic–structural mismatch using Intent–Impact Divergence***
-
-
-
-***The empirical evaluation includes historical reconstruction, structural-scope analysis, robustness testing, random controls, statistical inference, and downstream predictive evaluation.***
-
-
-
-***## Validation***
-
-
-
-***Historical Python structural reconstruction achieved exact module-profile equivalence for all 703 analysed Pull Requests.***
-
-
-
-***The study also evaluates:***
-
-
-
-***- full versus Python-only divergence***
-
-***- structural-scope confounding***
-
-***- bootstrap confidence intervals***
-
-***- permutation tests***
-
-***- random structural controls***
-
-***- chronological predictive evaluation***
-
-***- 90-day structural rework***
-
-
-
-***## Predictive Finding***
-
-
-
-***A chronological train/test evaluation was used to avoid temporal leakage.***
-
-
-
-***Baseline ROC-AUC:***
-
-
-
-&#x20;   ***0.564427***
-
-
-
-***Baseline + Intent–Impact Divergence ROC-AUC:***
-
-
-
-&#x20;   ***0.560606***
-
-
-
-***Observed difference:***
-
-
-
-&#x20;   ***-0.003821***
-
-
-
-***The 10,000-sample bootstrap 95% confidence interval was:***
-
-
-
-&#x20;   ***\[-0.024571, +0.018007]***
-
-
-
-***The paired permutation test produced:***
-
-
-
-&#x20;   ***p = 0.72962704***
-
-
-
-***Therefore, the study found no statistically detectable incremental predictive value of divergence for the selected 90-day structural-rework outcome.***
-
-
-
-***This negative result is retained as an empirical finding.***
-
-
-
-***## Reproducibility***
-
-
-
-***Python version:***
-
-
-
-&#x20;   ***>= 3.12, < 3.13***
-
-
-
-***Install dependencies:***
-
-
-
-&#x20;   ***python -m pip install -r requirements.txt***
-
-
-
-***Run tests:***
-
-
-
-&#x20;   ***python -m pytest -q***
-
-
-
-***The local SQLite database and environment secrets are excluded from version control.***
-
-
-
-***## Project Structure***
-
-
-
-&#x20;   ***src/intentinsight/***
-
-&#x20;       ***analysis/***
-
-&#x20;       ***application/***
-
-&#x20;       ***domain/***
-
-&#x20;       ***infrastructure/***
-
-&#x20;       ***ml/***
-
-&#x20;       ***presentation/***
-
-
-
-&#x20;   ***tests/***
-
-&#x20;       ***unit/***
-
-&#x20;       ***integration/***
-
-
-
-&#x20;   ***scripts/***
-
-&#x20;       ***research and validation experiments***
-
-
-
-***## Engineering Quality***
-
-
-
-***The project uses layered architecture, domain models, application services, database infrastructure, typed Python models, automated testing, reproducible research scripts, explicit dependency management, and an isolated development environment.***
-
-
-
-***The automated test suite contains 73 passing tests.***
-
-
-
-***## Status***
-
-
-
-***Research implementation and empirical evaluation complete.***
-
-
-
-***Final thesis preparation is in progress.***

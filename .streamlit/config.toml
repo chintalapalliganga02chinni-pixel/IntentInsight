@@ -1,0 +1,10 @@
+[theme]
+base = "dark"
+primaryColor = "#9ab9dc"
+backgroundColor = "#0b0e12"
+secondaryBackgroundColor = "#11161c"
+textColor = "#f3f5f7"
+font = "sans serif"
+
+[client]
+showErrorDetails = "stacktrace"

@@ -1,0 +1,31 @@
+{
+  "dataset": "DeepPull Python",
+  "rows": 9773,
+  "target": "lifetime",
+  "classes": [
+    "hour",
+    "day",
+    "week",
+    "month",
+    "mtmonth"
+  ],
+  "class_encoding": {
+    "hour": 0,
+    "day": 1,
+    "week": 2,
+    "month": 3,
+    "mtmonth": 4
+  },
+  "split": "chronological 60/20/20 by closed_at",
+  "random_seed": 42,
+  "primary_metric": "macro_averaged_absolute_error",
+  "representations": [
+    "tabular",
+    "tfidf",
+    "tabular_plus_tfidf",
+    "minilm",
+    "tabular_plus_minilm"
+  ],
+  "results_file": "results\\external\\deeppull\\deeppull_benchmark_v4_lifetime_results.csv",
+  "confusion_file": "results\\external\\deeppull\\deeppull_benchmark_v4_lifetime_confusion.csv"
+}

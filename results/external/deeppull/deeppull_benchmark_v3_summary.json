@@ -1,0 +1,12 @@
+{
+  "dataset": "DeepPull Python",
+  "rows": 9773,
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "split": "chronological 60/20/20 by closed_at",
+  "random_seed": 42,
+  "bootstrap_iterations": 10000,
+  "embedding_cache": "results\\external\\deeppull\\deeppull_minilm_embeddings.npy",
+  "results_file": "results\\external\\deeppull\\deeppull_benchmark_v3_results.csv",
+  "bootstrap_file": "results\\external\\deeppull\\deeppull_benchmark_v3_bootstrap.csv"
+}

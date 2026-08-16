@@ -1,0 +1,5 @@
+{
+  "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "row_count": 9773
+}

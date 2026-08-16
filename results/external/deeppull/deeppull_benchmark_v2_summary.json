@@ -1,0 +1,9 @@
+{
+  "dataset": "DeepPull Python",
+  "rows": 9773,
+  "split": "chronological 60/20/20 by closed_at",
+  "random_seed": 42,
+  "bootstrap_iterations": 10000,
+  "results_file": "results\\external\\deeppull\\deeppull_benchmark_v2_results.csv",
+  "bootstrap_file": "results\\external\\deeppull\\deeppull_benchmark_v2_bootstrap.csv"
+}

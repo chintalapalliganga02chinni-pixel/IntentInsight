@@ -1,0 +1,24 @@
+{
+  "dataset": "DeepPull Python",
+  "rows": 9773,
+  "split": "chronological 60/20/20 by closed_at",
+  "random_seed": 42,
+  "baseline_type": "training-period median/MAD",
+  "structural_features": [
+    "PR_num_commits",
+    "PR_num_modified_files",
+    "PR_num_added_files",
+    "PR_num_deleted_files",
+    "PR_num_changed_files",
+    "PR_num_changed_src_files",
+    "PR_num_changed_test_files",
+    "PR_num_changed_doc_files",
+    "PR_num_changed_other_files",
+    "PR_num_changed_lines",
+    "PR_num_added_lines",
+    "PR_num_deleted_lines",
+    "PR_has_test",
+    "PR_num_changed_test_lines"
+  ],
+  "results_file": "results\\external\\deeppull\\deeppull_benchmark_v5\\results.csv"
+}
